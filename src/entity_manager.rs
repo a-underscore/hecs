@@ -17,8 +17,7 @@ impl EntityManager {
             .keys()
             .cloned()
             .enumerate()
-            .find(|(i, id)| *i != *id)
-            .map(|(_, id)| id - 1)
+            .find_map(|(i, id)| (i != id).then_some(id - 1))
             .unwrap_or(self.entities.len());
 
         self.add_gen(id);
