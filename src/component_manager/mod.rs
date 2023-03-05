@@ -4,8 +4,8 @@ pub mod component;
 pub use as_any::AsAny;
 pub use component::Component;
 
-use super::{cast, cast_mut, entity_manager::EntityManager};
-use std::collections::BTreeMap;
+use super::entity_manager::EntityManager;
+use std::{collections::BTreeMap, mem};
 
 #[derive(Default)]
 pub struct ComponentManager<'a> {
@@ -65,7 +65,7 @@ impl<'a> ComponentManager<'a> {
     where
         C: Component,
     {
-        self.get_gen(eid, C::id(), em).map(cast)
+        self.get_gen(eid, C::id(), em).map(Self::cast)
     }
 
     pub fn get_gen_mut(
@@ -82,7 +82,7 @@ impl<'a> ComponentManager<'a> {
     where
         C: Component,
     {
-        self.get_gen_mut(eid, C::id(), em).map(cast_mut)
+        self.get_gen_mut(eid, C::id(), em).map(Self::cast_mut)
     }
 
     pub fn get_gen_cache_id(&self, eid: usize, cid: usize, em: &EntityManager) -> Option<usize> {
@@ -104,7 +104,7 @@ impl<'a> ComponentManager<'a> {
     where
         C: Component,
     {
-        self.get_gen_cache(cid).map(cast)
+        self.get_gen_cache(cid).map(Self::cast)
     }
 
     pub fn get_gen_cache_mut(&mut self, cid: usize) -> Option<&mut dyn AsAny<'a>> {
@@ -115,6 +115,22 @@ impl<'a> ComponentManager<'a> {
     where
         C: Component,
     {
-        self.get_gen_cache_mut(cid).map(cast_mut)
+        self.get_gen_cache_mut(cid).map(Self::cast_mut)
+    }
+
+    pub fn cast<'b, C>(f: &'b dyn AsAny<'a>) -> &'b C
+    where
+        C: Component,
+        'a: 'b,
+    {
+        *unsafe { mem::transmute::<&&_, &&_>(&f) }
+    }
+
+    pub fn cast_mut<'b, C>(mut f: &'b mut dyn AsAny<'a>) -> &'b mut C
+    where
+        C: Component,
+        'a: 'b,
+    {
+        *unsafe { mem::transmute::<&mut &mut _, &mut &mut _>(&mut f) }
     }
 }
