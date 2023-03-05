@@ -120,7 +120,6 @@ impl<'a> ComponentManager<'a> {
     pub fn cast<'b, C>(f: &'b dyn AsAny<'a>) -> &'b C
     where
         C: Component,
-        'a: 'b,
     {
         *unsafe { mem::transmute::<&&_, &&_>(&f) }
     }
@@ -128,7 +127,6 @@ impl<'a> ComponentManager<'a> {
     pub fn cast_mut<'b, C>(mut f: &'b mut dyn AsAny<'a>) -> &'b mut C
     where
         C: Component,
-        'a: 'b,
     {
         *unsafe { mem::transmute::<&mut &mut _, &mut &mut _>(&mut f) }
     }
