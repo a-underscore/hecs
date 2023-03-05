@@ -9,7 +9,7 @@ use std::{collections::BTreeMap, mem};
 
 #[derive(Default)]
 pub struct ComponentManager<'a> {
-    pub cache: BTreeMap<usize, Box<dyn AsAny<'a>>>,
+    pub cache: BTreeMap<usize, (usize, Box<dyn AsAny<'a>>)>,
 }
 
 impl<'a> ComponentManager<'a> {
@@ -30,7 +30,7 @@ impl<'a> ComponentManager<'a> {
 
         em.get_mut(eid)?.insert(cid, id);
 
-        self.cache.insert(id, component);
+        self.cache.insert(id, (cid, component));
 
         Some(id)
     }
@@ -55,7 +55,12 @@ impl<'a> ComponentManager<'a> {
         self.rm_gen(eid, C::id(), em);
     }
 
-    pub fn get_gen(&self, eid: usize, cid: usize, em: &EntityManager) -> Option<&dyn AsAny<'a>> {
+    pub fn get_gen(
+        &self,
+        eid: usize,
+        cid: usize,
+        em: &EntityManager,
+    ) -> Option<(usize, &dyn AsAny<'a>)> {
         self.get_gen_cache_id(eid, cid, em)
             .and_then(|cid| self.get_gen_cache(cid))
     }
@@ -64,7 +69,7 @@ impl<'a> ComponentManager<'a> {
     where
         C: Component,
     {
-        self.get_gen(eid, C::id(), em).map(Self::cast)
+        self.get_gen(eid, C::id(), em).and_then(Self::cast)
     }
 
     pub fn get_gen_mut(
@@ -72,7 +77,7 @@ impl<'a> ComponentManager<'a> {
         eid: usize,
         cid: usize,
         em: &EntityManager,
-    ) -> Option<&mut dyn AsAny<'a>> {
+    ) -> Option<(usize, &mut dyn AsAny<'a>)> {
         self.get_gen_cache_id(eid, cid, em)
             .and_then(|cid| self.get_gen_cache_mut(cid))
     }
@@ -81,7 +86,7 @@ impl<'a> ComponentManager<'a> {
     where
         C: Component,
     {
-        self.get_gen_mut(eid, C::id(), em).map(Self::cast_mut)
+        self.get_gen_mut(eid, C::id(), em).and_then(Self::cast_mut)
     }
 
     pub fn get_gen_cache_id(&self, eid: usize, cid: usize, em: &EntityManager) -> Option<usize> {
@@ -95,39 +100,42 @@ impl<'a> ComponentManager<'a> {
         self.get_gen_cache_id(eid, C::id(), em)
     }
 
-    pub fn get_gen_cache(&self, cid: usize) -> Option<&dyn AsAny<'a>> {
-        self.cache.get(&cid).map(Box::as_ref)
+    pub fn get_gen_cache(&self, cid: usize) -> Option<(usize, &dyn AsAny<'a>)> {
+        self.cache.get(&cid).map(|(id, c)| (*id, c.as_ref()))
     }
 
     pub fn get_cache<C>(&self, cid: usize) -> Option<&C>
     where
         C: Component,
     {
-        self.get_gen_cache(cid).map(Self::cast)
+        self.get_gen_cache(cid).and_then(Self::cast)
     }
 
-    pub fn get_gen_cache_mut(&mut self, cid: usize) -> Option<&mut dyn AsAny<'a>> {
-        self.cache.get_mut(&cid).map(Box::as_mut)
+    pub fn get_gen_cache_mut(&mut self, cid: usize) -> Option<(usize, &mut dyn AsAny<'a>)> {
+        self.cache.get_mut(&cid).map(|(id, c)| (*id, c.as_mut()))
     }
 
     pub fn get_cache_mut<C>(&mut self, cid: usize) -> Option<&mut C>
     where
         C: Component,
     {
-        self.get_gen_cache_mut(cid).map(Self::cast_mut)
+        self.get_gen_cache_mut(cid).and_then(Self::cast_mut)
     }
 
-    pub fn cast<'b, C>(f: &'b dyn AsAny<'a>) -> &'b C
+    pub fn cast<'b, C>((id, f): (usize, &'b dyn AsAny<'a>)) -> Option<&'b C>
     where
         C: Component,
     {
-        *unsafe { mem::transmute::<&&_, &&_>(&f) }
+        Some(*(C::id() == id).then(|| unsafe { mem::transmute::<&&_, &&_>(&f) })?)
     }
 
-    pub fn cast_mut<'b, C>(mut f: &'b mut dyn AsAny<'a>) -> &'b mut C
+    pub fn cast_mut<'b, C>((id, mut f): (usize, &'b mut dyn AsAny<'a>)) -> Option<&'b mut C>
     where
         C: Component,
     {
-        *unsafe { mem::transmute::<&mut &mut _, &mut &mut _>(&mut f) }
+        Some(
+            *(C::id() == id)
+                .then(|| unsafe { mem::transmute::<&mut &mut _, &mut &mut _>(&mut f) })?,
+        )
     }
 }
