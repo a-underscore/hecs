@@ -1,15 +1,15 @@
-pub mod as_any;
 pub mod component;
+pub mod generic;
 
-pub use as_any::AsAny;
 pub use component::Component;
+pub use generic::Generic;
 
 use super::entity_manager::EntityManager;
 use std::{collections::BTreeMap, mem};
 
 #[derive(Default)]
 pub struct ComponentManager<'a> {
-    pub cache: BTreeMap<usize, (usize, Box<dyn AsAny<'a>>)>,
+    pub cache: BTreeMap<usize, (usize, Box<dyn Generic<'a>>)>,
 }
 
 impl<'a> ComponentManager<'a> {
@@ -17,7 +17,7 @@ impl<'a> ComponentManager<'a> {
         &mut self,
         eid: usize,
         cid: usize,
-        component: Box<dyn AsAny<'a>>,
+        component: Box<dyn Generic<'a>>,
         em: &mut EntityManager,
     ) -> Option<usize> {
         let id = self
@@ -61,7 +61,7 @@ impl<'a> ComponentManager<'a> {
         eid: usize,
         cid: usize,
         em: &EntityManager,
-    ) -> Option<(usize, &dyn AsAny<'a>)> {
+    ) -> Option<(usize, &dyn Generic<'a>)> {
         self.get_gen_cache_id(eid, cid, em)
             .and_then(|cid| self.get_gen_cache(cid))
     }
@@ -78,7 +78,7 @@ impl<'a> ComponentManager<'a> {
         eid: usize,
         cid: usize,
         em: &EntityManager,
-    ) -> Option<(usize, &mut dyn AsAny<'a>)> {
+    ) -> Option<(usize, &mut dyn Generic<'a>)> {
         self.get_gen_cache_id(eid, cid, em)
             .and_then(|cid| self.get_gen_cache_mut(cid))
     }
@@ -101,7 +101,7 @@ impl<'a> ComponentManager<'a> {
         self.get_gen_cache_id(eid, C::id(), em)
     }
 
-    pub fn get_gen_cache(&self, cid: usize) -> Option<(usize, &dyn AsAny<'a>)> {
+    pub fn get_gen_cache(&self, cid: usize) -> Option<(usize, &dyn Generic<'a>)> {
         self.cache.get(&cid).map(|(id, c)| (*id, c.as_ref()))
     }
 
@@ -112,7 +112,7 @@ impl<'a> ComponentManager<'a> {
         self.get_gen_cache(cid).and_then(Self::cast)
     }
 
-    pub fn get_gen_cache_mut(&mut self, cid: usize) -> Option<(usize, &mut dyn AsAny<'a>)> {
+    pub fn get_gen_cache_mut(&mut self, cid: usize) -> Option<(usize, &mut dyn Generic<'a>)> {
         self.cache.get_mut(&cid).map(|(id, c)| (*id, c.as_mut()))
     }
 
@@ -123,14 +123,14 @@ impl<'a> ComponentManager<'a> {
         self.get_gen_cache_mut(cid).and_then(Self::cast_mut)
     }
 
-    pub fn cast<'b, C>((id, f): (usize, &'b dyn AsAny<'a>)) -> Option<&'b C>
+    pub fn cast<'b, C>((id, f): (usize, &'b dyn Generic<'a>)) -> Option<&'b C>
     where
         C: Component,
     {
         Some(*(C::id() == id).then(|| unsafe { mem::transmute::<&&_, &&_>(&f) })?)
     }
 
-    pub fn cast_mut<'b, C>((id, mut f): (usize, &'b mut dyn AsAny<'a>)) -> Option<&'b mut C>
+    pub fn cast_mut<'b, C>((id, mut f): (usize, &'b mut dyn Generic<'a>)) -> Option<&'b mut C>
     where
         C: Component,
     {
