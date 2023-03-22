@@ -1,4 +1,4 @@
-use super::component_manager::ComponentManager;
+use crate::ComponentManager;
 use std::collections::BTreeMap;
 
 #[derive(Default)]

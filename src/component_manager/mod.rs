@@ -4,7 +4,7 @@ pub mod generic;
 pub use component::Component;
 pub use generic::Generic;
 
-use super::entity_manager::EntityManager;
+use crate::EntityManager;
 use std::{collections::BTreeMap, mem};
 
 #[derive(Default)]
