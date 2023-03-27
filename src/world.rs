@@ -7,19 +7,13 @@ use glium::{
     Surface,
 };
 
+#[derive(Default)]
 pub struct World<'a> {
     pub em: EntityManager,
     pub cm: ComponentManager<'a>,
 }
 
-impl<'a> Default for World<'a> {
-    fn default() -> Self {
-        Self {
-            em: Default::default(),
-            cm: Default::default(),
-        }
-    }
-}
+
 
 impl World<'static> {
     pub fn update(
