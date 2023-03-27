@@ -13,8 +13,6 @@ pub struct World<'a> {
     pub cm: ComponentManager<'a>,
 }
 
-
-
 impl World<'static> {
     pub fn update(
         &mut self,
