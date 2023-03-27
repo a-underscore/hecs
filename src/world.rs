@@ -1,26 +1,22 @@
-use crate::{ev::Control, ComponentManager, EntityManager, Ev, SystemManager};
+use crate::{ev::Control, ComponentManager, EntityManager, Ev, Scene, SystemManager};
 use glium::{
     glutin::{
         event::{Event, WindowEvent},
         event_loop::{ControlFlow, EventLoop},
     },
-    Display, Surface,
+    Surface,
 };
 
 pub struct World<'a> {
     pub em: EntityManager,
     pub cm: ComponentManager<'a>,
-    pub display: Display,
-    pub bg: [f32; 4],
 }
 
-impl<'a> World<'a> {
-    pub fn new(display: Display, bg: [f32; 4]) -> Self {
+impl<'a> Default for World<'a> {
+    fn default() -> Self {
         Self {
-            em: EntityManager::default(),
-            cm: ComponentManager::default(),
-            display,
-            bg,
+            em: Default::default(),
+            cm: Default::default(),
         }
     }
 }
@@ -30,18 +26,19 @@ impl World<'static> {
         &mut self,
         mut control: Control,
         flow: &mut ControlFlow,
+        scene: &mut Scene,
         system_manager: &mut SystemManager<'static>,
     ) -> anyhow::Result<()> {
-        system_manager.update(&mut Ev::Event(&mut control), self)?;
+        system_manager.update(&mut Ev::Event(&mut control), scene, self)?;
 
         if let Event::MainEventsCleared = &control.event {
-            let mut target = self.display.draw();
+            let mut target = scene.display.draw();
 
-            let [r, g, b, a] = self.bg;
+            let [r, g, b, a] = scene.bg;
 
             target.clear_color_and_depth((r, g, b, a), 1.0);
 
-            system_manager.update(&mut Ev::Draw((&mut control, &mut target)), self)?;
+            system_manager.update(&mut Ev::Draw((&mut control, &mut target)), scene, self)?;
 
             target.finish()?;
         }
@@ -64,12 +61,18 @@ impl World<'static> {
     pub fn init(
         mut self,
         event_loop: EventLoop<()>,
+        mut scene: Scene,
         mut system_manager: SystemManager<'static>,
     ) -> anyhow::Result<()> {
-        system_manager.init(&mut self)?;
+        system_manager.init(&mut scene, &mut self)?;
 
         event_loop.run(move |event, _, control_flow| {
-            if let Err(e) = self.update(Control::new(event), control_flow, &mut system_manager) {
+            if let Err(e) = self.update(
+                Control::new(event),
+                control_flow,
+                &mut scene,
+                &mut system_manager,
+            ) {
                 eprintln!("{}", e);
             }
         });

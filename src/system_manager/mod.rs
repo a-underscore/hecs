@@ -2,7 +2,7 @@ pub mod system;
 
 pub use system::System;
 
-use crate::{Ev, World};
+use crate::{Ev, Scene, World};
 
 #[derive(Default)]
 pub struct SystemManager<'a> {
@@ -21,17 +21,22 @@ impl<'a> SystemManager<'a> {
         self.systems.pop();
     }
 
-    pub fn init(&mut self, world: &mut World<'a>) -> anyhow::Result<()> {
+    pub fn init(&mut self, scene: &mut Scene, world: &mut World) -> anyhow::Result<()> {
         for s in &mut self.systems {
-            s.init(world)?;
+            s.init(scene, world)?;
         }
 
         Ok(())
     }
 
-    pub fn update(&mut self, event: &mut Ev, world: &mut World<'a>) -> anyhow::Result<()> {
+    pub fn update(
+        &mut self,
+        event: &mut Ev,
+        scene: &mut Scene,
+        world: &mut World,
+    ) -> anyhow::Result<()> {
         for s in &mut self.systems {
-            s.update(event, world)?;
+            s.update(event, scene, world)?;
         }
 
         Ok(())
