@@ -5,7 +5,7 @@ pub trait System<'a>: 'a {
         Ok(())
     }
 
-    fn update(&mut self, _: &mut Ev, _: &mut World<'a>) -> anyhow::Result<()> {
+    fn update(&mut self, _: &mut Ev, _: &mut World) -> anyhow::Result<()> {
         Ok(())
     }
 }
