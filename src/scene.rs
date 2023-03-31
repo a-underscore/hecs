@@ -17,9 +17,7 @@ impl Scene {
     pub fn new(display: Display, bg: [f32; 4]) -> Self {
         Self { display, bg }
     }
-}
 
-impl Scene {
     pub fn update(
         &mut self,
         mut control: Control,
