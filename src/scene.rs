@@ -23,7 +23,7 @@ impl Scene {
         mut control: Control,
         flow: &mut ControlFlow,
         world: &mut World,
-        system_manager: &mut SystemManager<'static>,
+        system_manager: &mut SystemManager,
     ) -> anyhow::Result<()> {
         system_manager.update(&mut Ev::Event(&mut control), self, world)?;
 
