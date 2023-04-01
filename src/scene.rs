@@ -20,9 +20,9 @@ impl Scene {
 
     pub fn init(
         mut self,
+        event_loop: EventLoop<()>,
         mut world: World<'static>,
         mut system_manager: SystemManager<'static>,
-        event_loop: EventLoop<()>,
     ) -> anyhow::Result<()> {
         system_manager.init(&mut self, &mut world)?;
 
