@@ -30,9 +30,14 @@ impl Scene {
         if let Event::MainEventsCleared = &control.event {
             let mut target = self.display.draw();
 
-            let [r, g, b, a] = self.bg;
+            target.clear_color_and_depth(
+                {
+                    let [r, g, b, a] = self.bg;
 
-            target.clear_color_and_depth((r, g, b, a), 1.0);
+                    (r, g, b, a)
+                },
+                1.0,
+            );
 
             system_manager.update(&mut Ev::Draw((&mut control, &mut target)), self, world)?;
 
