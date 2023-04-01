@@ -18,6 +18,26 @@ impl Scene {
         Self { display, bg }
     }
 
+    pub fn init(
+        mut self,
+        mut world: World<'static>,
+        mut system_manager: SystemManager<'static>,
+        event_loop: EventLoop<()>,
+    ) -> anyhow::Result<()> {
+        system_manager.init(&mut self, &mut world)?;
+
+        event_loop.run(move |event, _, control_flow| {
+            if let Err(e) = self.update(
+                Control::new(event),
+                control_flow,
+                &mut world,
+                &mut system_manager,
+            ) {
+                eprintln!("{}", e);
+            }
+        });
+    }
+
     pub fn update(
         &mut self,
         mut control: Control,
@@ -57,25 +77,5 @@ impl Scene {
         }
 
         Ok(())
-    }
-
-    pub fn init(
-        mut self,
-        event_loop: EventLoop<()>,
-        mut world: World<'static>,
-        mut system_manager: SystemManager<'static>,
-    ) -> anyhow::Result<()> {
-        system_manager.init(&mut self, &mut world)?;
-
-        event_loop.run(move |event, _, control_flow| {
-            if let Err(e) = self.update(
-                Control::new(event),
-                control_flow,
-                &mut world,
-                &mut system_manager,
-            ) {
-                eprintln!("{}", e);
-            }
-        });
     }
 }
